@@ -84,7 +84,15 @@ def calc_temp(start, end):
     
     return {"max temp": tmax, "min temp": tmin, "avg temp": tavg}
 
-
+#%%
+@app.route("/api/v1.0/<start>")
+def calc_temp(start):
+    
+    tmax = pd.read_sql(f'SELECT max(tobs) mx FROM measurement WHERE date >= "{start}"', engine).iloc[0][0]
+    tmin = pd.read_sql(f'SELECT min(tobs) mi FROM measurement WHERE date >= "{start}"', engine).iloc[0][0]
+    tavg = pd.read_sql(f'SELECT avg(tobs) av FROM measurement WHERE date >= "{start}"', engine).iloc[0][0]
+    
+    return {"max temp": tmax, "min temp": tmin, "avg temp": tavg}
 
 #%%
 if __name__ == '__main__':
