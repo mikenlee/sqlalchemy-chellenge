@@ -50,10 +50,40 @@ def stations():
 
 #%%
 @app.route("/api/v1.0/tobs")
-def stations():
+def temp():
     
-    stations = list(pd.read_sql('SELECT distinct(station) FROM measurement', engine)['station'])
-    return jsonify(stations)
+    #query to get temps from the most active station
+    query = '''
+            SELECT tobs
+            FROM measurement
+            WHERE station = (
+                SELECT station 
+                FROM (
+                    SELECT COUNT(station) AS station_count , station
+                    FROM measurement
+                    GROUP BY station
+                )
+                WHERE station_count = (
+                    SELECT MAX(station_count)
+                    FROM (
+                        SELECT count(station) AS station_count
+                        FROM measurement 
+                        GROUP BY station 
+                ))) AND date >= "2016-08-18"
+            '''
+    observations = pd.read_sql(query, engine)
+    return jsonify(list(observations['tobs']))
+
+#%%
+@app.route("/api/v1.0/<start>/<end>")
+def calc_temp(start, end):
+    
+    tmax = pd.read_sql(f'SELECT max(tobs) mx FROM measurement WHERE date >= "{start}" and date <= "{end}"', engine).iloc[0][0]
+    tmin = pd.read_sql(f'SELECT min(tobs) mi FROM measurement WHERE date >= "{start}" and date <= "{end}"', engine).iloc[0][0]
+    tavg = pd.read_sql(f'SELECT avg(tobs) av FROM measurement WHERE date >= "{start}" and date <= "{end}"', engine).iloc[0][0]
+    
+    return {"max temp": tmax, "min temp": tmin, "avg temp": tavg}
+
 
 
 #%%
